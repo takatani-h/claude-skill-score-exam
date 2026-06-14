@@ -24,7 +24,7 @@ cp /path/to/claude-skill-score-exam/pyproject.toml .
 または gh でリポジトリをクローンしてからコピーするよう伝える:
 
 ```bash
-gh repo clone <owner>/claude-skill-score-exam /tmp/score-exam
+gh repo clone takatani-h/claude-skill-score-exam /tmp/score-exam
 cp /tmp/score-exam/setup_coords.py .
 cp /tmp/score-exam/grade.py .
 cp /tmp/score-exam/pyproject.toml .
