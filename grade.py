@@ -12,9 +12,32 @@ def load_config(path: str) -> dict:
         return json.load(f)
 
 
-def load_scores(path: str) -> list[dict]:
+def _name_of(row: dict) -> str:
+    return row.get("氏名", row.get("name", "")).strip()
+
+
+def load_scores(path: str) -> tuple[dict, list[dict]]:
+    """CSVを読み、(配点マップ, 学生行リスト) を返す。
+
+    2行目（最初のデータ行）の氏名欄が「配点」の場合、その行を各問の
+    配点として扱い、学生行から除外する。無ければ配点マップは空。
+    """
     with open(path, newline="", encoding="utf-8-sig") as f:
-        return list(csv.DictReader(f))
+        rows = list(csv.DictReader(f))
+
+    points = {}
+    if rows and _name_of(rows[0]) in ("配点", "points", "点数"):
+        points_row = rows.pop(0)
+        for key, val in points_row.items():
+            if key in ("氏名", "name"):
+                continue
+            val = (val or "").strip()
+            if val:
+                try:
+                    points[key] = int(val)
+                except ValueError:
+                    pass
+    return points, rows
 
 
 def draw_mark(page: fitz.Page, x: float, y: float, correct: bool, cfg: dict):
@@ -53,32 +76,32 @@ def process_student(
     idx: int,
     cfg: dict,
     row: dict,
+    points: dict,
 ) -> tuple[str, int]:
     pps = cfg["pages_per_student"]
-    pts = cfg.get("points_per_question", 5)
+    default_pts = cfg.get("points_per_question", 5)
     questions = cfg["questions"]
 
     start = idx * pps
     out.insert_pdf(src, from_page=start, to_page=start + pps - 1)
     base = out.page_count - pps
 
-    correct_count = 0
+    total = 0
     for q in questions:
         mark = row.get(q["id"], "").strip()
         if mark not in ("1", "0"):
             continue
         is_correct = mark == "1"
         if is_correct:
-            correct_count += 1
+            total += points.get(q["id"], default_pts)
         page_idx = q["page"]
         if page_idx < pps:
             draw_mark(out[base + page_idx], q["x"], q["y"], is_correct, cfg)
 
-    total = correct_count * pts
     score_page = cfg.get("score_page", 0)
     add_score_text(out[base + score_page], total, cfg)
 
-    name = row.get("氏名", row.get("name", f"student_{idx + 1:03d}")).strip()
+    name = _name_of(row) or f"student_{idx + 1:03d}"
     return name, total
 
 
@@ -91,7 +114,7 @@ def main():
     args = parser.parse_args()
 
     cfg = load_config(args.config)
-    students = load_scores(args.csv)
+    points, students = load_scores(args.csv)
     out_path = Path(args.output)
     out_path.parent.mkdir(exist_ok=True)
 
@@ -108,7 +131,7 @@ def main():
         if (i + 1) * pps > src.page_count:
             print(f"  [{i + 1}] ページ不足のためスキップ")
             continue
-        name, score = process_student(src, out, i, cfg, row)
+        name, score = process_student(src, out, i, cfg, row, points)
         results.append((name, score))
         print(f"  [{i + 1:3d}] {name}: {score}点")
 

@@ -27,18 +27,24 @@ cp claude-skill-score-exam/.claude/commands/score-exam.md ~/.claude/commands/
 | ファイル | 説明 |
 |---|---|
 | `*.pdf` | 全学生の答案を連結したPDF（1人あたりNページ） |
-| `*.csv` | 氏名と各問の正誤フラグ |
+| `score.csv` | 氏名・配点・各問の正誤フラグ |
+
+`score.csv` が無い場合は、スキル実行時に雛形 `score_template.csv` が `score.csv` としてコピーされます。
 
 ### CSVフォーマット
 
 ```csv
 氏名,Q1,Q2,Q3,Q4,Q5
+配点,5,5,10,5,5
 山田太郎,1,0,1,1,0
 鈴木花子,1,1,1,0,1
 ```
 
-- `1` = 正解 / `0` = 不正解
-- 列名は `Q1`, `Q2`, ... （連番）
+- 1行目: ヘッダー。列名は `Q1`, `Q2`, ... （連番）
+- 2行目: **配点行**。氏名欄を `配点` とし、各問の点数を記入する
+- 3行目以降: 各学生。`1` = 正解 / `0` = 不正解
+
+配点行を省略した場合は `config.json` の `points_per_question`（既定5点）が全問に適用されます。
 
 ## 設定（config.json）
 
@@ -46,7 +52,7 @@ cp claude-skill-score-exam/.claude/commands/score-exam.md ~/.claude/commands/
 
 | キー | デフォルト | 説明 |
 |---|---|---|
-| `points_per_question` | `5` | 1問あたりの配点 |
+| `points_per_question` | `5` | 1問あたりの既定配点（`score.csv` の配点行が優先） |
 | `mark_radius` | `12` | 丸印の半径（pt） |
 | `mark_width` | `2` | 線の太さ（pt） |
 | `score_fontsize` | `24` | 点数のフォントサイズ |
@@ -77,6 +83,7 @@ macOS の場合:
 │       └── score-exam.md   # Claude Code スキルファイル
 ├── setup_coords.py         # GUI で正答位置・点数位置を指定するツール
 ├── grade.py                # 採点・PDF書き込みツール
+├── score_template.csv      # 採点表 score.csv の雛形
 └── pyproject.toml          # Python 依存関係
 ```
 
