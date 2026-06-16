@@ -22,10 +22,10 @@ cp /path/to/claude-skill-score-exam/pyproject.toml .
 cp /path/to/claude-skill-score-exam/score_template.csv .
 ```
 
-または gh でリポジトリをクローンしてからコピーするよう伝える:
+または git でリポジトリをクローンしてからコピーするよう伝える:
 
 ```bash
-gh repo clone takatani-h/claude-skill-score-exam /tmp/score-exam
+git clone https://github.com/takatani-h/claude-skill-score-exam.git /tmp/score-exam
 cp /tmp/score-exam/setup_coords.py .
 cp /tmp/score-exam/grade.py .
 cp /tmp/score-exam/pyproject.toml .
