@@ -71,6 +71,8 @@ cp /tmp/score-exam/score_template.csv .
 uv run --isolated setup_coords.py --pdf <PDFファイル> --pages <ページ数>
 ```
 
+問題数は `score.csv` の `Q1`,`Q2`,... 列から自動で取得される（`--csv` で別ファイルを指定可）。CSV が無い・Q列が見つからない場合は GUI のダイアログで問題数を尋ねる。明示したいときは `--questions <数>` を付ける。
+
 GUI が開くのでユーザーに操作してもらう。「完了しました」と言われたら次へ。
 
 ### ステップ5: 採点実行

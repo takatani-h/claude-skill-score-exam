@@ -1,7 +1,9 @@
 #!/usr/bin/env python3
 import argparse
+import csv
 import io
 import json
+import re
 import tkinter as tk
 from tkinter import messagebox, simpledialog
 
@@ -196,14 +198,41 @@ def ask_int(title: str, prompt: str, min_val: int = 1) -> int:
             return val
 
 
+def count_questions_from_csv(path: str) -> int | None:
+    """CSVのヘッダから Q番号列の最大値を問題数として返す。
+
+    `Q1`,`Q2`,... の列を探し、最大の番号を返す。CSVが無い・該当列が
+    無い場合は None。
+    """
+    try:
+        with open(path, newline="", encoding="utf-8-sig") as f:
+            header = next(csv.reader(f), [])
+    except (FileNotFoundError, StopIteration):
+        return None
+
+    nums = []
+    for col in header:
+        m = re.fullmatch(r"Q(\d+)", col.strip())
+        if m:
+            nums.append(int(m.group(1)))
+    return max(nums) if nums else None
+
+
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--pdf", required=True)
     parser.add_argument("--config", default="config.json")
+    parser.add_argument("--csv", default="score.csv")
     parser.add_argument("--pages", type=int, default=1)
+    parser.add_argument("--questions", type=int,
+                        help="問題数を明示指定（省略時はCSVから自動取得）")
     args = parser.parse_args()
 
-    num_questions = ask_int("問題数", "問題数を入力してください:")
+    num_questions = args.questions or count_questions_from_csv(args.csv)
+    if num_questions:
+        print(f"問題数: {num_questions}問（{args.csv} から取得）")
+    else:
+        num_questions = ask_int("問題数", "問題数を入力してください:")
     CoordPicker(args.pdf, args.config, num_questions, args.pages)
 
 
