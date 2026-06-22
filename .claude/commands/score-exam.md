@@ -44,7 +44,7 @@ cp /tmp/score-exam/score_template.csv .
 
 採点表 `score.csv` の有無を確認する:
 
-- **存在しない場合**: 雛形 `score_template.csv` を `score.csv` としてコピーし、ユーザーに「`score.csv` を生成しました。氏名と各問の正誤（1=正解 / 0=不正解）を記入してから次へ進んでください」と案内する。
+- **存在しない場合**: 雛形 `score_template.csv` を `score.csv` としてコピーし、ユーザーに「`score.csv` を生成しました。Name と各問の正誤（1=正解 / それ以外=不正解）を記入してから次へ進んでください」と案内する。
 
   ```bash
   cp score_template.csv score.csv
@@ -54,7 +54,7 @@ cp /tmp/score-exam/score_template.csv .
 
 - **存在する場合**: そのまま使う。
 
-> **配点について**: `score.csv` の2行目（氏名欄が `配点` の行）に各問の配点を記入する。`grade.py` はこの行を読んで問ごとに加点する（例: `配点,5,5,10,5,5`）。配点行が無い場合は `config.json` の `points_per_question`（既定5点）が全問に適用される。
+> **配点について**: `score.csv` の2行目（`Name` 欄が `Points` の行）に各問の配点を記入する。`grade.py` はこの行を読んで問ごとに加点する（例: `Points,5,5,10,5,5`）。配点行が無い場合は `config.json` の `points_per_question`（既定5点）が全問に適用される。
 
 ### ステップ3: 設定ファイルの確認
 
@@ -83,4 +83,4 @@ uv run --isolated grade.py --pdf <PDFファイル> --csv score.csv
 
 ### ステップ6: 完了報告
 
-出力された人数・平均点を伝え、`output/graded.pdf` を確認するよう案内する。
+出力された人数・平均点を伝え、`output/graded.pdf` と `score_graded.csv` を確認するよう案内する。元の `score.csv` は編集されず、採点CSVには最右列 `Total` が追加される。
