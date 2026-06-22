@@ -7,3 +7,5 @@ config.json
 output/
 *.pdf
 *.csv
+!score_template.csv
+!.codex/skills/score-exam/assets/score_template.csv

@@ -1,0 +1,7 @@
+interface:
+  display_name: "Score Exam"
+  short_description: "Grade exam PDFs from a score CSV"
+  default_prompt: "Use $score-exam to grade this combined exam PDF with score.csv."
+
+policy:
+  allow_implicit_invocation: true
