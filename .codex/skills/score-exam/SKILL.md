@@ -1,6 +1,6 @@
 ---
 name: score-exam
-description: Grade a combined exam-answer PDF using score.csv, per-question correctness flags, optional point values, and a guided coordinate-picking workflow; generate output/graded.pdf with marks and total scores.
+description: Grade a combined exam-answer PDF using score.csv, per-question correctness flags, optional point values, and a guided coordinate-picking workflow; generate output/graded.pdf with marks and a *_graded.csv copy with total scores.
 ---
 
 # Score Exam
@@ -27,8 +27,8 @@ Use this skill when the user asks to score, grade, mark, or annotate a combined 
 3. List available PDFs and choose the target PDF. If there are multiple plausible PDFs and the user did not specify one, ask which PDF to use.
 4. Ensure `score.csv` exists.
    - If it does not exist, copy `score_template.csv` to `score.csv` and tell the user to fill in student names and `1` or `0` flags before continuing.
-   - `1` means correct, `0` means incorrect.
-   - A second row whose name cell is `配点`, `points`, or `点数` is treated as per-question point values.
+   - `1` means correct; any other value is incorrect.
+   - A second row whose name cell is `Points`, `配点`, or `点数` is treated as per-question point values.
 5. Check for `config.json`.
    - If present, summarize `pages_per_student` and the number of configured questions, then ask whether to reuse it or recapture coordinates.
    - If absent, continue to coordinate setup.
@@ -47,18 +47,19 @@ Use this skill when the user asks to score, grade, mark, or annotate a combined 
    uv run --isolated grade.py --pdf <PDF> --csv score.csv
    ```
 
-9. Report the processed student count, average score, and output path from the command output. The default output is `output/graded.pdf`.
+9. Report the processed student count, average score, PDF output path, and graded CSV output path from the command output. The default PDF output is `output/graded.pdf`.
 
 ## CSV Format
 
 ```csv
-氏名,Q1,Q2,Q3,Q4,Q5
-配点,5,5,10,5,5
-山田太郎,1,0,1,1,0
-鈴木花子,1,1,1,0,1
+Name,Q1,Q2,Q3,Q4,Q5
+Points,5,5,10,5,5
+Student1,1,0,1,1,0
+Student2,1,1,1,0,1
 ```
 
 If the point row is omitted, `config.json`'s `points_per_question` value is used; the default is 5.
+The original CSV is not modified. Grading creates a sibling copy named `<original-stem>_graded.csv` and appends `Total` as the rightmost column.
 
 ## Notes
 

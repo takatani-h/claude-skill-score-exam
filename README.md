@@ -1,6 +1,6 @@
 # codex-skill-score-exam
 
-Codex 向け採点スキル。試験答案PDFに丸・バツと点数を書き込む。
+Codex 向け採点スキル。試験答案PDFに丸・バツと点数を書き込み、採点CSVを出力する。
 
 ## インストール
 
@@ -31,19 +31,21 @@ Use $score-exam to grade this combined exam PDF with score.csv.
 | `score.csv` | 氏名・配点・各問の正誤フラグ |
 
 `score.csv` が無い場合は、スキル実行時に雛形 `score_template.csv` が `score.csv` としてコピーされます。
+採点時に元の `score.csv` は編集せず、同じディレクトリに `score_graded.csv` を作成して最右列に `Total` を追記します。
+`--csv scores.csv` のように別名を指定した場合は、`scores_graded.csv` が作成されます。
 
 ### CSVフォーマット
 
 ```csv
-氏名,Q1,Q2,Q3,Q4,Q5
-配点,5,5,10,5,5
-山田太郎,1,0,1,1,0
-鈴木花子,1,1,1,0,1
+Name,Q1,Q2,Q3,Q4,Q5
+Points,5,5,10,5,5
+Student1,1,0,1,1,0
+Student2,1,1,1,0,1
 ```
 
 - 1行目: ヘッダー。列名は `Q1`, `Q2`, ... （連番）
-- 2行目: **配点行**。氏名欄を `配点` とし、各問の点数を記入する
-- 3行目以降: 各学生。`1` = 正解 / `0` = 不正解
+- 2行目: **配点行**。`Name` 欄を `Points` とし、各問の点数を記入する
+- 3行目以降: 各学生。`1` = 正解 / それ以外 = 不正解
 
 配点行を省略した場合は `config.json` の `points_per_question`（既定5点）が全問に適用されます。
 

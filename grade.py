@@ -13,23 +13,30 @@ def load_config(path: str) -> dict:
 
 
 def _name_of(row: dict) -> str:
-    return row.get("氏名", row.get("name", "")).strip()
+    for key in ("氏名", "name", "Name", "NAME"):
+        if key in row:
+            return (row.get(key) or "").strip()
+    return ""
 
 
-def load_scores(path: str) -> tuple[dict, list[dict]]:
-    """CSVを読み、(配点マップ, 学生行リスト) を返す。
+def load_scores(path: str) -> tuple[dict, list[dict], list[str], list[dict], list[int]]:
+    """CSVを読み、(配点マップ, 学生行リスト, ヘッダー, 全行, 学生行番号) を返す。
 
     2行目（最初のデータ行）の氏名欄が「配点」の場合、その行を各問の
     配点として扱い、学生行から除外する。無ければ配点マップは空。
     """
     with open(path, newline="", encoding="utf-8-sig") as f:
-        rows = list(csv.DictReader(f))
+        reader = csv.DictReader(f)
+        fieldnames = list(reader.fieldnames or [])
+        rows = list(reader)
 
     points = {}
-    if rows and _name_of(rows[0]) in ("配点", "points", "点数"):
-        points_row = rows.pop(0)
+    student_start = 0
+    if rows and _name_of(rows[0]).casefold() in ("配点", "points", "点数"):
+        points_row = rows[0]
+        student_start = 1
         for key, val in points_row.items():
-            if key in ("氏名", "name"):
+            if key in ("氏名", "name", "Name", "NAME"):
                 continue
             val = (val or "").strip()
             if val:
@@ -37,7 +44,35 @@ def load_scores(path: str) -> tuple[dict, list[dict]]:
                     points[key] = int(val)
                 except ValueError:
                     pass
-    return points, rows
+
+    students = rows[student_start:]
+    student_row_indices = list(range(student_start, len(rows)))
+    return points, students, fieldnames, rows, student_row_indices
+
+
+def graded_csv_path(path: str) -> Path:
+    src = Path(path)
+    return src.with_name(f"{src.stem}_graded{src.suffix}")
+
+
+def write_graded_scores(
+    path: str,
+    fieldnames: list[str],
+    rows: list[dict],
+    row_scores: dict[int, int],
+) -> Path:
+    out_path = graded_csv_path(path)
+    output_fields = [name for name in fieldnames if name != "Total"] + ["Total"]
+
+    with open(out_path, "w", newline="", encoding="utf-8-sig") as f:
+        writer = csv.DictWriter(f, fieldnames=output_fields, extrasaction="ignore")
+        writer.writeheader()
+        for idx, row in enumerate(rows):
+            out_row = dict(row)
+            out_row["Total"] = row_scores.get(idx, "")
+            writer.writerow(out_row)
+
+    return out_path
 
 
 def draw_mark(page: fitz.Page, x: float, y: float, correct: bool, cfg: dict):
@@ -89,8 +124,6 @@ def process_student(
     total = 0
     for q in questions:
         mark = row.get(q["id"], "").strip()
-        if mark not in ("1", "0"):
-            continue
         is_correct = mark == "1"
         if is_correct:
             total += points.get(q["id"], default_pts)
@@ -114,7 +147,7 @@ def main():
     args = parser.parse_args()
 
     cfg = load_config(args.config)
-    points, students = load_scores(args.csv)
+    points, students, fieldnames, csv_rows, student_row_indices = load_scores(args.csv)
     out_path = Path(args.output)
     out_path.parent.mkdir(exist_ok=True)
 
@@ -127,12 +160,14 @@ def main():
     print(f"{len(students)}名分を処理中...")
     out = fitz.open()
     results = []
+    row_scores = {}
     for i, row in enumerate(students):
         if (i + 1) * pps > src.page_count:
             print(f"  [{i + 1}] ページ不足のためスキップ")
             continue
         name, score = process_student(src, out, i, cfg, row, points)
         results.append((name, score))
+        row_scores[student_row_indices[i]] = score
         print(f"  [{i + 1:3d}] {name}: {score}点")
 
     out.save(out_path, garbage=4, deflate=True)
@@ -140,8 +175,10 @@ def main():
     src.close()
 
     avg = sum(s for _, s in results) / len(results) if results else 0
+    graded_scores_path = write_graded_scores(args.csv, fieldnames, csv_rows, row_scores)
     print(f"\n完了: {len(results)}名  平均点: {avg:.1f}点")
     print(f"出力先: {out_path}")
+    print(f"採点CSV: {graded_scores_path}")
 
 
 if __name__ == "__main__":
